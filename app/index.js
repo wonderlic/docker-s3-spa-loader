@@ -55,18 +55,18 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     console.log(`Received notification from SNS topic '${snsTopicArn}'`);
 
     const message = JSON.parse(req.body.Message);
-    console.log(`Message: ${JSON.stringify(message, null, ' ')}`);
+    //console.log(`Message: ${JSON.stringify(message, null, ' ')}`);
 
     const objectKeys = _.compact(_.map(message.Records, function(record) {
       return _.get(record, 's3.object.key');
     }));
-    console.log(`ObjectKeys; ${objectKeys}`);
+    console.log(`objectKeys; ${objectKeys}`);
 
-    _.forEach(objectKeys, function(objectKey) {
+    for (const objectKey of objectKey) {
       if (this._cache[objectKey]) {
         delete this._cache[objectKey];
       }
-    });
+    }
 
     console.log(`Cleared ${objectKeys} from Cache`);
     res.send(`Cleared ${objectKeys} from Cache`);
