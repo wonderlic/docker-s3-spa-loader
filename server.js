@@ -17,7 +17,8 @@ app.use(function(req, res, next) {
 // log every request / response
 app.use(requestLogger(env.LOG_FORMAT));
 
-// parse the body of incoming requests to json
+// parse the body of incoming requests to text/json
+app.use(bodyParser.text());
 app.use(bodyParser.json());
 
 // gzip/deflate outgoing responses
@@ -33,7 +34,7 @@ app.post('/sns/clear-cache', appMethods.clearCacheSnsHandler);
 app.use(appMethods.request);
 
 // Error logging should be the last thing wired up...
-app.use(function(reg, res, next, err) {
+app.use(function(err, req, res, next) {
   console.error(err);
   res.status(500).send('An Error Occurred.');
 });

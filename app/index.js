@@ -26,6 +26,9 @@ App.prototype.clearCache = function(req, res) {
 };
 
 App.prototype.clearCacheSnsHandler = function(req, res) {
+  if (_.isString(req.body)) {
+    req.body = JSON.parse(req.body);
+  }
   console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
   console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
 
