@@ -36,7 +36,10 @@ app.use(appMethods.request);
 // Error logging should be the last thing wired up...
 app.use(function(err, req, res, next) {
   console.error(err);
-  res.status(500).send('An Error Occurred.');
+  if (res.headersSent) {
+    return next(err);
+  }
+  return res.status(err.status || 500).render('500');
 });
 
 app.listen(env.PORT, function() {

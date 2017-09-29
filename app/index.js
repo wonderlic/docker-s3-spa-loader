@@ -20,12 +20,12 @@ function App() {
   });
 }
 
-App.prototype.clearCache = function(req, res) {
+App.prototype.clearCache = errorHandler(function(req, res) {
   this._cache = {};
   res.send('Cache Cleared');
-};
+});
 
-App.prototype.clearCacheSnsHandler = function(req, res) {
+App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
   if (_.isString(req.body)) {
     req.body = JSON.parse(req.body);
   }
@@ -43,31 +43,31 @@ App.prototype.clearCacheSnsHandler = function(req, res) {
     default:
       throw new Error(`Unknown type: '${snsMessageType}'`);
   }
-};
+});
 
-App.prototype.subscribeToSnsTopic = async(function(req, res) {
+App.prototype.subscribeToSnsTopic = errorHandler(function(req, res) {
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
   await(https.get(req.body.SubscribeURL));
   console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
   res.send('OK');
 });
 
-App.prototype.unsubscribeFromSnsTopic = function(req, res) {
+App.prototype.unsubscribeFromSnsTopic = errorHandler(function(req, res) {
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
   console.log(`Successfully unsubscribed from SNS topic '${snsTopicArn}'`);
   res.send('OK');
-};
+});
 
-App.prototype.clearCacheFromS3Event = function(req, res) {
+App.prototype.clearCacheFromS3Event = errorHandler(function(req, res) {
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
   console.log(`Received clear cache message from SNS topic '${snsTopicArn}'`);
 
   // TODO... partial cache clear if only a single file changed...
   this._cache = {};
   res.send('Cache Cleared');
-};
+});
 
-App.prototype.request = async(function(req, res, next) {
+App.prototype.request = errorHandler(function(req, res, next) {
   const hostname = req.hostname.toLowerCase();
 
   // TODO... add HTTP->HTTPS redirection...
@@ -94,5 +94,15 @@ App.prototype.request = async(function(req, res, next) {
     res.status(404).send('Not Found');
   }
 });
+
+function errorHandler(handler) {
+  return async(function(req, res, next) {
+    try {
+      await(handler.apply(this, arguments));
+    } catch (err) {
+      next(err);
+    }
+  });
+}
 
 module.exports = new App();
