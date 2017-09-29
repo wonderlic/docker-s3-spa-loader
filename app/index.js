@@ -60,11 +60,19 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
 });
 
 App.prototype.request = errorHandler(function(req, res) {
+  const isHttps = _.get(req.headers, 'x-forwarded-proto') === 'https';
   const hostname = req.hostname.toLowerCase();
+  const path = req.path.toLowerCase();
 
+  console.log(`${req.method}: ${isHttps ? 'https://' : 'http://'}${hostname}${path}`);
   console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
-  // TODO... add HTTP->HTTPS redirection...
+  // HTTP->HTTPS redirection...
+  if (!isHttps) {
+    const newUrl = `https://${hostname}${path}`;
+    console.log(`Redirecting to '${newUrl}'`);
+    return res.redirect(301, newUrl);
+  }
 
   let cachedLookup = this._cache[hostname];
   if (!cachedLookup) {
