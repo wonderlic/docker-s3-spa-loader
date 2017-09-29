@@ -22,6 +22,7 @@ function App() {
 
 App.prototype.clearCache = errorHandler(function(req, res) {
   this._cache = {};
+  console.log('Cache Cleared');
   res.send('Cache Cleared');
 });
 
@@ -53,9 +54,19 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
   function notification() {
     console.log(`Received notification from SNS topic '${snsTopicArn}'`);
 
-    // TODO... partial cache clear if only a single file changed...
-    this._cache = {};
-    res.send('Cache Cleared');
+    const message = JSON.parse(req.body.Message);
+    console.log(`Message: ${JSON.stringify(req.headers, null, ' ')}`);
+
+    const objectKeys = _.compact(_.map(message.Records, function(record) {
+      return _.get(record, 's3.object.key');
+    }));
+
+    _.forEach(objectKeys, function(objectKey) {
+      delete this._cache[objectKey];
+    });
+
+    console.log(`Cleared ${objectKeys} from Cache`);
+    res.send(`Cleared ${objectKeys} from Cache`);
   }
 });
 
