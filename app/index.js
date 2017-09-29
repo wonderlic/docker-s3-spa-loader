@@ -23,7 +23,7 @@ function App() {
 App.prototype.clearCache = errorHandler(function(req, res) {
   this._cache = {};
   console.log('Cache Cleared');
-  res.send('Cache Cleared');
+  res.send('OK');
 });
 
 App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
@@ -32,8 +32,8 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
   if (_.isString(req.body)) { // SNS sends a json Body with a Content-Type of text/plain for some reason
     req.body = JSON.parse(req.body);
   }
-  console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
-  console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
+  //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
+  //console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
 
   const snsMessageType = req.headers['x-amz-sns-message-type'];
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
@@ -48,13 +48,14 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
   }
 
   function subscribe() {
+    console.log(`Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`);
     await(https.get(req.body.SubscribeURL));
     console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
     res.send('OK');
   }
 
   function notification() {
-    console.log(`Received notification from SNS topic '${snsTopicArn}'`);
+    console.log(`Received Notification from SNS topic '${snsTopicArn}'`);
 
     const message = JSON.parse(req.body.Message);
     //console.log(`Message: ${JSON.stringify(message, null, ' ')}`);
@@ -62,7 +63,7 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     const objectKeys = _.compact(_.map(message.Records, function(record) {
       return _.get(record, 's3.object.key');
     }));
-    console.log(`objectKeys: ${objectKeys}`);
+    //console.log(`objectKeys: ${objectKeys}`);
 
     for (const objectKey of objectKeys) {
       if (self._cache[objectKey]) {
@@ -71,7 +72,7 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     }
 
     console.log(`Cleared ${objectKeys} from Cache`);
-    res.send(`Cleared ${objectKeys} from Cache`);
+    res.send(`OK`);
   }
 });
 
@@ -80,13 +81,13 @@ App.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
   const path = req.path.toLowerCase();
 
-  console.log(`${req.method}: ${isHttps ? 'https://' : 'http://'}${hostname}${path}`);
-  console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
+  //console.log(`${req.method}: ${isHttps ? 'https://' : 'http://'}${hostname}${path}`);
+  //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
   // HTTP->HTTPS redirection...
   if (!isHttps) {
     const newUrl = `https://${hostname}${path}`;
-    console.log(`Redirecting to '${newUrl}'`);
+    //console.log(`Redirecting to '${newUrl}'`);
     return res.redirect(301, newUrl);
   }
 
