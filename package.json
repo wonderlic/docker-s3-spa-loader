@@ -1,0 +1,14 @@
+{
+  "name": "s3-spa-loader",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "asyncawait": "1.0.6",
+    "aws-sdk": "2.124.0",
+    "body-parser": "1.18.2",
+    "compression": "1.7.1",
+    "express": "4.16.0",
+    "lodash": "3.10.1",
+    "morgan": "1.9.0"
+  }
+}
