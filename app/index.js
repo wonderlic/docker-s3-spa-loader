@@ -26,8 +26,8 @@ App.prototype.clearCache = function(req, res) {
 };
 
 App.prototype.clearCacheSnsHandler = function(req, res) {
-  console.log(`HEADERS: ${req.headers}`);
-  console.log(`BODY: ${req.body}`);
+  console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
+  console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
 
   const snsMessageType = req.headers['x-amz-sns-message-type'];
   switch (snsMessageType) {

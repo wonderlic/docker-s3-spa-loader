@@ -34,7 +34,7 @@ app.use(appMethods.request);
 
 // Error logging should be the last thing wired up...
 app.use(function(reg, res, next, err) {
-  console.err(err);
+  console.error(err);
   res.status(500).send('An Error Occurred.');
 });
 
