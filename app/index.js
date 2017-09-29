@@ -62,7 +62,7 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     }));
     console.log(`objectKeys; ${objectKeys}`);
 
-    for (const objectKey of objectKey) {
+    for (const objectKey of objectKeys) {
       if (this._cache[objectKey]) {
         delete this._cache[objectKey];
       }
