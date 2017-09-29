@@ -26,49 +26,43 @@ App.prototype.clearCache = errorHandler(function(req, res) {
 });
 
 App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
-  if (_.isString(req.body)) {
+  if (_.isString(req.body)) { // SNS sends a json Body with a Content-Type of text/plain for some reason
     req.body = JSON.parse(req.body);
   }
   console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
   console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
 
   const snsMessageType = req.headers['x-amz-sns-message-type'];
+  const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
+
   switch (snsMessageType) {
     case 'SubscriptionConfirmation':
-      return this.subscribeToSnsTopic(req, res);
-    case 'UnsubscriptionConfirmation':
-      return this.unsubscribeFromSnsTopic(req, res);
+      return subscribe();
     case 'Notification':
-      return this.clearCacheFromS3Event(req, res);
+      return notification();
     default:
       throw new Error(`Unknown type: '${snsMessageType}'`);
   }
+
+  function subscribe() {
+    await(https.get(req.body.SubscribeURL));
+    console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
+    res.send('OK');
+  }
+
+  function notification() {
+    console.log(`Received notification from SNS topic '${snsTopicArn}'`);
+
+    // TODO... partial cache clear if only a single file changed...
+    this._cache = {};
+    res.send('Cache Cleared');
+  }
 });
 
-App.prototype.subscribeToSnsTopic = errorHandler(function(req, res) {
-  const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
-  await(https.get(req.body.SubscribeURL));
-  console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
-  res.send('OK');
-});
-
-App.prototype.unsubscribeFromSnsTopic = errorHandler(function(req, res) {
-  const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
-  console.log(`Successfully unsubscribed from SNS topic '${snsTopicArn}'`);
-  res.send('OK');
-});
-
-App.prototype.clearCacheFromS3Event = errorHandler(function(req, res) {
-  const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
-  console.log(`Received clear cache message from SNS topic '${snsTopicArn}'`);
-
-  // TODO... partial cache clear if only a single file changed...
-  this._cache = {};
-  res.send('Cache Cleared');
-});
-
-App.prototype.request = errorHandler(function(req, res, next) {
+App.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
+
+  console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
   // TODO... add HTTP->HTTPS redirection...
 
@@ -81,8 +75,7 @@ App.prototype.request = errorHandler(function(req, res, next) {
       if (_.get(err, 'code') === 'NoSuchKey') {
         cachedLookup = {notFound: true};
       } else {
-        console.error(err);
-        return next(err);
+        throw err;
       }
     }
     this._cache[hostname] = cachedLookup;
@@ -100,7 +93,11 @@ function errorHandler(handler) {
     try {
       await(handler.apply(this, arguments));
     } catch (err) {
-      next(err);
+      if (next) {
+        next(err);
+      } else {
+        throw err;
+      }
     }
   });
 }

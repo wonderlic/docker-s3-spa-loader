@@ -29,17 +29,21 @@ app.get('/health-check', function(req, res) {
 });
 
 const appMethods = require('./app');
-app.get('/clear-cache', appMethods.clearCache);
+//app.get('/clear-cache', appMethods.clearCache);
 app.post('/sns/clear-cache', appMethods.clearCacheSnsHandler);
+app.get('/test', appMethods.request);
 app.use(appMethods.request);
 
 // Error logging should be the last thing wired up...
 app.use(function(err, req, res, next) {
   console.error(err);
-  if (res.headersSent) {
-    return next(err);
+  if (!res.headersSent) {
+    res.status(err.status || 500).send('An Error Occurred.');
+  } else if (next) {
+    next(err);
+  } else {
+    console.error('No further error handling.');
   }
-  return res.status(err.status || 500).render('500');
 });
 
 app.listen(env.PORT, function() {
