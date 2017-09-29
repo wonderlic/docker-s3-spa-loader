@@ -45,14 +45,14 @@ App.prototype.clearCacheSnsHandler = function(req, res) {
   }
 };
 
-App.prototype.subscriptToSnsTopic = async(function(req, res) {
+App.prototype.subscribeToSnsTopic = async(function(req, res) {
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
   await(https.get(req.body.SubscribeURL));
   console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
   res.send('OK');
 });
 
-App.prototype.unsubscriptfromSnsTopic = function(req, res) {
+App.prototype.unsubscribeFromSnsTopic = function(req, res) {
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
   console.log(`Successfully unsubscribed from SNS topic '${snsTopicArn}'`);
   res.send('OK');
