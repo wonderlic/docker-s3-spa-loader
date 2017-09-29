@@ -27,6 +27,8 @@ App.prototype.clearCache = errorHandler(function(req, res) {
 });
 
 App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
+  const self = this;
+
   if (_.isString(req.body)) { // SNS sends a json Body with a Content-Type of text/plain for some reason
     req.body = JSON.parse(req.body);
   }
@@ -60,11 +62,11 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     const objectKeys = _.compact(_.map(message.Records, function(record) {
       return _.get(record, 's3.object.key');
     }));
-    console.log(`objectKeys; ${objectKeys}`);
+    console.log(`objectKeys: ${objectKeys}`);
 
     for (const objectKey of objectKeys) {
-      if (this._cache[objectKey]) {
-        delete this._cache[objectKey];
+      if (self._cache[objectKey]) {
+        delete self._cache[objectKey];
       }
     }
 
