@@ -26,8 +26,8 @@ docker run \
 ```
 
 If not set:
-  PORT defaults to 8080
-  TRUST_PROXY defaults to true
-  AWS_REGION defaults to us-east-1
+*  PORT defaults to 8080
+*  TRUST_PROXY defaults to true
+*  AWS_REGION defaults to us-east-1
 
 The AWS S3 Bucket needs to allow the ListBucket and GetObject permissions
