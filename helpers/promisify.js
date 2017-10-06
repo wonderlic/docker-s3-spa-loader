@@ -2,13 +2,13 @@ const _ = require('lodash');
 
 function Promisify() {}
 
-Promisify.prototype.allMethods = function(obj) {
-  return _.mapValues(_.pick(obj, _.functions(obj)), function(method) {
-    return promisify(method.bind(obj));
+Promisify.prototype.allFunctions = function(obj) {
+  return _.mapValues(_.pick(obj, _.functions(obj)), (method) => {
+    return this.function(method.bind(obj));
   });
 };
 
-function promisify(fn) {
+Promisify.prototype.function = function(fn) {
   return function() {
     const context = this;
     const args = _.toArray(arguments);
@@ -22,6 +22,6 @@ function promisify(fn) {
       }));
     });
   };
-}
+};
 
 module.exports = new Promisify();
