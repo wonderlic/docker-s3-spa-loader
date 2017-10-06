@@ -4,7 +4,7 @@ MAINTAINER Wonderlic DevOps <DevOps@wonderlic.com>
 COPY helpers /app/helpers
 COPY services /app/services
 COPY env.js /app/env.js
-COPY handlers /app/handlers.js
+COPY handlers.js /app/handlers.js
 COPY server.js /app/server.js
 
 COPY package.json /app/package.json
