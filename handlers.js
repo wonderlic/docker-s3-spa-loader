@@ -2,13 +2,12 @@ const _ = require('lodash');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 
-const env = require('../env');
-const promisify = require('../helpers/promisify');
-const https = promisify.allMethods(require('https'));
+const env = require('./env');
+const https = require('./helpers/https');
 
-const AwsSimpleStorage = require('../services/AwsSimpleStorage');
+const AwsSimpleStorage = require('./services/AwsSimpleStorage');
 
-function App() {
+function Handlers() {
   _.bindAll(this);
 
   this._cache = {};
@@ -20,13 +19,19 @@ function App() {
   });
 }
 
-App.prototype.clearCache = errorHandler(function(req, res) {
+Handlers.prototype.healthCheck = function(req, res) {
+  log(req, 200, 'Health Check');
+  res.send('OK');
+};
+
+Handlers.prototype.clearCache = errorHandler(function(req, res) {
   this._cache = {};
-  console.log('Cache Cleared');
+
+  log(req, 200, 'Cache Cleared');
   res.send('OK');
 });
 
-App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
+Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
   const self = this;
 
   if (_.isString(req.body)) { // SNS sends a json Body with a Content-Type of text/plain for some reason
@@ -44,13 +49,14 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
     case 'Notification':
       return notification();
     default:
-      throw new Error(`Unknown type: '${snsMessageType}'`);
+      throw new Error(`Unknown SNS message type: '${snsMessageType}'`);
   }
 
   function subscribe() {
     console.log(`Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`);
     await(https.get(req.body.SubscribeURL));
-    console.log(`Successfully subscribed to SNS topic '${snsTopicArn}'`);
+
+    log(req, 200, `Successfully subscribed to SNS topic: ${snsTopicArn}`);
     res.send('OK');
   }
 
@@ -71,23 +77,22 @@ App.prototype.clearCacheSnsHandler = errorHandler(function(req, res) {
       }
     }
 
-    console.log(`Cleared ${objectKeys} from Cache`);
+    log(req, 200, `Cleared ${objectKeys} from Cache`);
     res.send(`OK`);
   }
 });
 
-App.prototype.request = errorHandler(function(req, res) {
-  const isHttps = _.get(req.headers, 'x-forwarded-proto') === 'https';
+Handlers.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
-  const path = req.path.toLowerCase();
 
-  //console.log(`${req.method}: ${isHttps ? 'https://' : 'http://'}${hostname}${path}`);
+  //console.log(`${req.ip} ${req.method} ${req.protocol}://${req.hostname}${req.originalUrl}`);
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
-  // HTTP->HTTPS redirection...
-  if (!isHttps) {
-    const newUrl = `https://${hostname}${path}`;
-    //console.log(`Redirecting to '${newUrl}'`);
+  // HTTP -> HTTPS redirection...
+  if (!req.secure) {
+    const newUrl = `https://${req.hostname}${req.originalUrl}`;
+
+    log(req, 301, `Redirected to secure url: ${newUrl}`);
     return res.redirect(301, newUrl);
   }
 
@@ -107,11 +112,33 @@ App.prototype.request = errorHandler(function(req, res) {
   }
 
   if (cachedLookup.fileContents) {
+    log(req, 200, `Served up SPA for: ${hostname} size: ${cachedLookup.fileContents.length}`);
     res.send(cachedLookup.fileContents);
   } else {
+    log(req, 404, `Could not find SPA for: ${hostname}`);
     res.status(404).send('Not Found');
   }
 });
+
+Handlers.prototype.error = function(err, req, res, next) {
+  err.code = err.status || err.code || 500;
+  log(req, err.code, `Error: ${err.message})`);
+  console.error(err.stack);
+  if (!res.headersSent) {
+    res.status(err.code).send('An Error Occurred.');
+  } else if (next) {
+    next(err);
+  } else {
+    console.error('No further error handling.');
+  }
+};
+
+function log(req, status, result) {
+  const requestUrl = `${req.protocol}://${req.hostname}${req.path}`;
+  const now = new Date();
+  const ms = now - req.startTime;
+  console.log(`${now.toISOString()} ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}" -> ${status} ${ms}ms "${result}"`);
+}
 
 function errorHandler(handler) {
   return async(function(req, res, next) {
@@ -127,4 +154,4 @@ function errorHandler(handler) {
   });
 }
 
-module.exports = new App();
+module.exports = new Handlers();

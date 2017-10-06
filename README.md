@@ -17,7 +17,7 @@ The /health-check route can be used with a load balancer to verify the service i
 ```
 docker run \
   -e PORT=... \
-  -e LOG_FORMAT=... \
+  -e TRUST_PROXY=... \
   -e AWS_ACCESS_KEY_ID=... \
   -e AWS_SECRET_ACCESS_KEY=... \
   -e AWS_REGION=... \
@@ -27,7 +27,7 @@ docker run \
 
 If not set:
   PORT defaults to 8080
-  LOG_FORMAT defaults to combined
+  TRUST_PROXY defaults to true
   AWS_REGION defaults to us-east-1
 
 The AWS S3 Bucket needs to allow the ListBucket and GetObject permissions
