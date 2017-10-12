@@ -1,7 +1,7 @@
 FROM node:6.11.1-slim
 MAINTAINER Wonderlic DevOps <DevOps@wonderlic.com>
 
-COPY helpers services env.js handlers.js package.json server.js /app
+COPY helpers services env.js handlers.js package.json server.js /app/
 
 RUN cd /app && npm install
 
