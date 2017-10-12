@@ -19,11 +19,6 @@ function Handlers() {
   });
 }
 
-Handlers.prototype.healthCheck = function(req, res) {
-  log(req, 200, 'Health Check');
-  res.send('OK');
-};
-
 Handlers.prototype.clearCache = errorHandler(function(req, res) {
   this._cache = {};
 

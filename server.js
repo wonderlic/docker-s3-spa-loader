@@ -11,6 +11,8 @@ if (env.TRUST_PROXY === 'true') {
   app.enable('trust proxy');
 }
 
+app.get('/heartbeat', function(req, res) { res.send('alive'); });
+
 app.use(function(req, res, next) {
   req.startTime = new Date();
   // Allows the browser to cache requests, but force the browser to always check back with the server for newer versions of resources
@@ -27,7 +29,6 @@ app.use(bodyParser.json());
 app.use(compression());
 
 const handlers = require('./handlers');
-app.get('/health-check', handlers.healthCheck);
 app.get('/clear-cache', handlers.clearCache);
 app.post('/sns/clear-cache', handlers.snsClearCache);
 app.use(handlers.request);
