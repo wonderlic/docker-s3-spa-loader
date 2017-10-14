@@ -1,13 +1,10 @@
-FROM node:6.11.1-slim
+FROM node:6.11.4-alpine
 MAINTAINER Wonderlic DevOps <DevOps@wonderlic.com>
 
 COPY helpers /app/helpers
 COPY services /app/services
-COPY env.js /app/env.js
-COPY handlers.js /app/handlers.js
-COPY server.js /app/server.js
+COPY env.js handlers.js server.js package.json /app/
 
-COPY package.json /app/package.json
 RUN cd /app && npm install
 
 RUN ln -s /usr/local/bin/node /app/s3-spa-loader

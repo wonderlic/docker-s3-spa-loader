@@ -10,7 +10,7 @@
 This docker image will start a node.js webserver and serve the up the primary html file for a single page app based on the incoming hostname.
 The files are retrieved from an AWS S3 Bucket (filename should be the same as the hostname that it is for) and cached in local memory.
 An AWS SNS Topic can be configured to respond to S3 Events and publish them to the /sns/cache-clear route to refresh cached files when they change.
-The /health-check route can be used with a load balancer to verify the service is up and running.
+The /heartbeat route can be used with a load balancer to verify the service is up and running.
 
 ### Usage
 

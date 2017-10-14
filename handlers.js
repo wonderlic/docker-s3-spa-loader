@@ -1,6 +1,4 @@
 const _ = require('lodash');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 
 const env = require('./env');
 const https = require('./helpers/https');
@@ -49,10 +47,11 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
 
   function subscribe() {
     console.log(`Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`);
-    await(https.get(req.body.SubscribeURL));
-
-    log(req, 200, `Successfully subscribed to SNS topic: ${snsTopicArn}`);
-    res.send('OK');
+    return https.get(req.body.SubscribeURL)
+      .then(() => {
+        log(req, 200, `Successfully subscribed to SNS topic: ${snsTopicArn}`);
+        res.send('OK');
+      });
   }
 
   function notification() {
@@ -91,29 +90,41 @@ Handlers.prototype.request = errorHandler(function(req, res) {
     return res.redirect(301, newUrl);
   }
 
-  let cachedLookup = this._cache[hostname];
-  if (!cachedLookup) {
-    try {
-      const s3Object = await(this.awsSimpleStorage.getObject(this.bucketName, hostname));
-      cachedLookup = {fileContents: s3Object.Body.toString()};
-    } catch (err) {
+  return this._getSpaFromCache(hostname)
+    .then((spa) => {
+      if (spa.fileContents) {
+        log(req, 200, `Served up SPA for: ${hostname} size: ${spa.fileContents.length}`);
+        res.send(spa.fileContents);
+      } else {
+        log(req, 404, `Could not find SPA for: ${hostname}`);
+        res.status(404).send('Not Found');
+      }
+    });
+});
+
+Handlers.prototype._getSpaFromCache = function(hostname) {
+  const spa = this._cache[hostname];
+  if (spa) {
+    return Promise.resolve(spa);
+  }
+
+  return this.awsSimpleStorage.getObject(this.bucketName, hostname)
+    .then((s3Object) => {
+      return this._addSpaToCache(hostname, {fileContents: s3Object.Body.toString()});
+    })
+    .catch((err) => {
       if (_.get(err, 'code') === 'NoSuchKey') {
-        cachedLookup = {notFound: true};
+        return this._addSpaToCache(hostname, {notFound: true});
       } else {
         throw err;
       }
-    }
-    this._cache[hostname] = cachedLookup;
-  }
+    });
+};
 
-  if (cachedLookup.fileContents) {
-    log(req, 200, `Served up SPA for: ${hostname} size: ${cachedLookup.fileContents.length}`);
-    res.send(cachedLookup.fileContents);
-  } else {
-    log(req, 404, `Could not find SPA for: ${hostname}`);
-    res.status(404).send('Not Found');
-  }
-});
+Handlers.prototype._addSpaToCache = function(hostname, spa) {
+  this._cache[hostname] = spa;
+  return spa;
+};
 
 Handlers.prototype.error = function(err, req, res, next) {
   err.code = err.status || err.code || 500;
@@ -136,17 +147,16 @@ function log(req, status, result) {
 }
 
 function errorHandler(handler) {
-  return async(function(req, res, next) {
-    try {
-      await(handler.apply(this, arguments));
-    } catch (err) {
-      if (next) {
-        next(err);
-      } else {
-        throw err;
-      }
-    }
-  });
+  return function (req, res, next) {
+    Promise.resolve(handler.apply(this, arguments))
+      .catch((err) => {
+        if (next) {
+          next(err);
+        } else {
+          throw err;
+        }
+      });
+  };
 }
 
 module.exports = new Handlers();
