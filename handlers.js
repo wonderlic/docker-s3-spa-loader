@@ -1,20 +1,12 @@
 const _ = require('lodash');
 
-const env = require('./env');
-const https = require('./helpers/https');
-
-const AwsSimpleStorage = require('./services/AwsSimpleStorage');
+const config = require('./config');
 
 function Handlers() {
   _.bindAll(this);
 
   this._cache = {};
-  this.bucketName = env.AWS_S3_BUCKET_NAME;
-  this.awsSimpleStorage = new AwsSimpleStorage({
-    region: env.AWS_REGION,
-    accessKeyId: env.AWS_ACCESS_KEY,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY
-  });
+  this.bucketName = config.awsS3BucketName;
 }
 
 Handlers.prototype.clearCache = errorHandler(function(req, res) {
@@ -47,7 +39,7 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
 
   function subscribe() {
     console.log(`Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`);
-    return https.get(req.body.SubscribeURL)
+    return httpsGet(req.body.SubscribeURL)
       .then(() => {
         log(req, 200, `Successfully subscribed to SNS topic: ${snsTopicArn}`);
         res.send('OK');
@@ -71,19 +63,20 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
       }
     }
 
-    log(req, 200, `Cleared ${objectKeys} from Cache`);
+    log(req, 200, `Cleared [${objectKeys}] from Cache`);
     res.send(`OK`);
   }
 });
 
 Handlers.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
+  //const hostname = _.trimLeft(req.path.toLowerCase(), '/');
 
   //console.log(`${req.ip} ${req.method} ${req.protocol}://${req.hostname}${req.originalUrl}`);
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
   // HTTP -> HTTPS redirection...
-  if (!req.secure) {
+  if (!req.secure && config.redirectInsecure) {
     const newUrl = `https://${req.hostname}${req.originalUrl}`;
 
     log(req, 301, `Redirected to secure url: ${newUrl}`);
@@ -93,7 +86,7 @@ Handlers.prototype.request = errorHandler(function(req, res) {
   return this._getSpaFromCache(hostname)
     .then((spa) => {
       if (spa.fileContents) {
-        log(req, 200, `Served up SPA for: ${hostname} size: ${spa.fileContents.length}`);
+        log(req, 200, `Served up SPA for: ${hostname}, size: ${spa.fileContents.length}`);
         res.send(spa.fileContents);
       } else {
         log(req, 404, `Could not find SPA for: ${hostname}`);
@@ -103,17 +96,20 @@ Handlers.prototype.request = errorHandler(function(req, res) {
 });
 
 Handlers.prototype._getSpaFromCache = function(hostname) {
+  if (_.isEmpty(hostname)) {
+    return Promise.resolve({notFound: true});
+  }
   const spa = this._cache[hostname];
   if (spa) {
     return Promise.resolve(spa);
   }
 
-  return this.awsSimpleStorage.getObject(this.bucketName, hostname)
-    .then((s3Object) => {
-      return this._addSpaToCache(hostname, {fileContents: s3Object.Body.toString()});
+  return httpGet(`http://${this.bucketName}.s3.amazonaws.com/${hostname}`)
+    .then((fileContents) => {
+      return this._addSpaToCache(hostname, {fileContents});
     })
     .catch((err) => {
-      if (_.get(err, 'code') === 'NoSuchKey') {
+      if (_.get(err, 'code') === 404) {
         return this._addSpaToCache(hostname, {notFound: true});
       } else {
         throw err;
@@ -143,11 +139,11 @@ function log(req, status, result) {
   const requestUrl = `${req.protocol}://${req.hostname}${req.path}`;
   const now = new Date();
   const ms = now - req.startTime;
-  console.log(`${now.toISOString()} ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}" -> ${status} ${ms}ms "${result}"`);
+  console.log(`${now.toISOString()} ${status} ${ms}ms "${result}" <- ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}"`);
 }
 
 function errorHandler(handler) {
-  return function (req, res, next) {
+  return function(req, res, next) {
     Promise.resolve(handler.apply(this, arguments))
       .catch((err) => {
         if (next) {
@@ -157,6 +153,36 @@ function errorHandler(handler) {
         }
       });
   };
+}
+
+function httpGet(options) { return getWrapper(require('http'), options); }
+function httpsGet(options) { return getWrapper(require('https'), options); }
+function getWrapper(http, options) {
+  return new Promise(function(resolve, reject) {
+    const req = http.get(options, function(res) {
+
+      // Reject on bad status
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        const err = new Error(`Request returned status code: ${res.statusCode}`);
+        err.code = res.statusCode;
+        return reject(err);
+      }
+
+      // Accumulate Body data
+      const body = [];
+      res.on('data', (data) => {
+        body.push(data);
+      });
+
+      // Resolve on end
+      res.on('end', () => {
+        resolve(Buffer.concat(body).toString());
+      });
+    });
+
+    // Reject on request error
+    req.on('error', reject);
+  });
 }
 
 module.exports = new Handlers();
