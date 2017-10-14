@@ -1,12 +1,12 @@
 const _ = require('lodash');
 
-const env = require('./env');
+const config = require('./config');
 
 function Handlers() {
   _.bindAll(this);
 
   this._cache = {};
-  this.bucketName = env.AWS_S3_BUCKET_NAME;
+  this.bucketName = config.awsS3BucketName;
 }
 
 Handlers.prototype.clearCache = errorHandler(function(req, res) {
@@ -76,7 +76,7 @@ Handlers.prototype.request = errorHandler(function(req, res) {
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
   // HTTP -> HTTPS redirection...
-  if (!req.secure && env.REDIRECT_INSECURE === 'true') {
+  if (!req.secure && config.redirectInsecure) {
     const newUrl = `https://${req.hostname}${req.originalUrl}`;
 
     log(req, 301, `Redirected to secure url: ${newUrl}`);

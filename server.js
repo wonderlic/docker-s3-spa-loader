@@ -1,12 +1,13 @@
-const env = require('./env');
 const express = require('express');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 
+const config = require('./config');
+
 const app = express();
 app.disable('x-powered-by');
 
-if (env.TRUST_PROXY === 'true') {
+if (config.trustProxy) {
   console.log('Trusting proxy headers');
   app.enable('trust proxy');
 }
@@ -36,6 +37,6 @@ app.use(handlers.request);
 // Error logging should be the last thing wired up...
 app.use(handlers.error);
 
-app.listen(env.PORT, function() {
-  console.log('Express server listening on port ' + env.PORT);
+app.listen(config.port, function() {
+  console.log('Express server listening on port ' + config.port);
 });
