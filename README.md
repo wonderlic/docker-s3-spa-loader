@@ -7,10 +7,13 @@
 
 ### Description
 
-This docker image will start a node.js webserver and serve the up the primary html file for a single page app based on the incoming hostname.
-The files are retrieved from an AWS S3 Bucket (filename should be the same as the hostname that it is for) and cached in local memory.
-An AWS SNS Topic can be configured to respond to S3 Events and publish them to the /sns/cache-clear route to refresh cached files when they change.
-The /heartbeat route can be used with a load balancer to verify the service is up and running.
+This docker image will start a node.js webserver and serve the up the primary single page app html file associated with a request's incoming hostname.  The served SPA file is retrieved from an AWS S3 Bucket (and cached in local memory) where the filename matches the incoming hostname (without any file extension).
+
+(OPTIONAL) Incoming insecure requests can be automatically redirected to their secure version (HTTP -> HTTPS redirection)
+
+The /sns/cache-clear route can be subscribed to an AWS SNS Topic where published AWS S3 Events will clear the associated file from the local memory cache when there are changes made to the file in the AWS S3 Bucket.
+
+The /heartbeat route can be used with a load balancer (AWS ALB) to verify the service is still up and running.
 
 ### Usage
 
@@ -18,9 +21,7 @@ The /heartbeat route can be used with a load balancer to verify the service is u
 docker run \
   -e PORT=... \
   -e TRUST_PROXY=... \
-  -e AWS_ACCESS_KEY_ID=... \
-  -e AWS_SECRET_ACCESS_KEY=... \
-  -e AWS_REGION=... \
+  -e REDIRECT_INSECURE=... \
   -e AWS_S3_BUCKET_NAME=... \
   wonderlic/s3-spa-loader
 ```
@@ -28,6 +29,31 @@ docker run \
 If not set:
 *  PORT defaults to 8080
 *  TRUST_PROXY defaults to true
-*  AWS_REGION defaults to us-east-1
+*  REDIRECT_INSECURE defaults to true
 
-The AWS S3 Bucket needs to allow the ListBucket and GetObject permissions
+The AWS S3 Bucket needs to allow the ListBucket and GetObject permissions.
+
+Example Bucket Policy:
+
+```
+{
+    "Version": "2008-10-17",
+    "Id": "PolicyForS3SpaLoader",
+    "Statement": [
+        {
+            "Sid": "1",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::BUCKET_NAME"
+        },
+        {
+            "Sid": "2",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+        }
+    ]
+}
+```
