@@ -1,11 +1,9 @@
-FROM node:6.11.1-slim
+FROM node:6.11.1-alpine
 MAINTAINER Wonderlic DevOps <DevOps@wonderlic.com>
 
 COPY helpers /app/helpers
 COPY services /app/services
-COPY env.js /app/env.js
-COPY handlers.js /app/handlers.js
-COPY server.js /app/server.js
+COPY env.js handlers.js server.js /app/
 
 COPY package.json /app/package.json
 RUN cd /app && npm install
