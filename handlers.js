@@ -105,7 +105,7 @@ Handlers.prototype.request = errorHandler(function(req, res) {
 Handlers.prototype._getSpaFromCache = function(hostname) {
   const spa = this._cache[hostname];
   if (spa) {
-    return spa;
+    return Promise.resolve(spa);
   }
 
   return this.awsSimpleStorage.getObject(this.bucketName, hostname)
