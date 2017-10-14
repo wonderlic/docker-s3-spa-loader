@@ -7,13 +7,13 @@
 
 ### Description
 
-This docker image will start a node.js webserver and serve the up the primary single page app html file associated with a request's incoming hostname.  The served SPA file is retrieved from an AWS S3 Bucket (and cached in local memory) where the filename matches the incoming hostname (without any file extension).
+This docker image will start a node.js webserver and serve up the primary single page app html file associated with a request's incoming hostname.  The served SPA file is retrieved from an AWS S3 Bucket (and cached in local memory) where the filename matches the incoming hostname (without any file extension).
 
-(OPTIONAL) Incoming insecure requests can be automatically redirected to their secure version (HTTP -> HTTPS redirection)
+HTTP -> HTTPS Redirection: Incoming insecure requests can automatically be redirected to their secure version (OPTIONAL)
 
 The /sns/cache-clear route can be subscribed to an AWS SNS Topic where published AWS S3 Events will clear the associated file from the local memory cache when there are changes made to the file in the AWS S3 Bucket.
 
-The /heartbeat route can be used with a load balancer (AWS ALB) to verify the service is still up and running.
+The /heartbeat route can be used as a health check with a load balancer (i.e. AWS ALB) to verify the service is still up and running.
 
 ### Usage
 
@@ -26,10 +26,13 @@ docker run \
   wonderlic/s3-spa-loader
 ```
 
+
 If not set:
 *  PORT defaults to 8080
 *  TRUST_PROXY defaults to true
 *  REDIRECT_INSECURE defaults to true
+
+### AWS S3 Permissions
 
 The AWS S3 Bucket needs to allow the ListBucket and GetObject permissions.
 
