@@ -63,7 +63,7 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
       }
     }
 
-    log(req, 200, `Cleared ${objectKeys} from Cache`);
+    log(req, 200, `Cleared [${objectKeys}] from Cache`);
     res.send(`OK`);
   }
 });
@@ -86,7 +86,7 @@ Handlers.prototype.request = errorHandler(function(req, res) {
   return this._getSpaFromCache(hostname)
     .then((spa) => {
       if (spa.fileContents) {
-        log(req, 200, `Served up SPA for: ${hostname} size: ${spa.fileContents.length}`);
+        log(req, 200, `Served up SPA for: ${hostname}, size: ${spa.fileContents.length}`);
         res.send(spa.fileContents);
       } else {
         log(req, 404, `Could not find SPA for: ${hostname}`);
@@ -96,6 +96,9 @@ Handlers.prototype.request = errorHandler(function(req, res) {
 });
 
 Handlers.prototype._getSpaFromCache = function(hostname) {
+  if (_.isEmpty(hostname)) {
+    return Promise.resolve({notFound: true});
+  }
   const spa = this._cache[hostname];
   if (spa) {
     return Promise.resolve(spa);
@@ -136,7 +139,7 @@ function log(req, status, result) {
   const requestUrl = `${req.protocol}://${req.hostname}${req.path}`;
   const now = new Date();
   const ms = now - req.startTime;
-  console.log(`${now.toISOString()} ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}" -> ${status} ${ms}ms "${result}"`);
+  console.log(`${now.toISOString()} ${status} ${ms}ms "${result}" <- ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}"`);
 }
 
 function errorHandler(handler) {
