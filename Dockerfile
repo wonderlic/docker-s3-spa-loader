@@ -1,7 +1,7 @@
 FROM node:6.11.4-alpine
 MAINTAINER Wonderlic DevOps <DevOps@wonderlic.com>
 
-COPY env.js handlers.js server.js package.js /app/
+COPY env.js handlers.js server.js package.json /app/
 
 RUN cd /app && \
     npm install --production && \
