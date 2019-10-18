@@ -70,7 +70,7 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
 
 Handlers.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
-  //const hostname = _.trimLeft(req.path.toLowerCase(), '/');
+  //const hostname = _.trimStart(req.path.toLowerCase(), '/');
 
   //console.log(`${req.ip} ${req.method} ${req.protocol}://${req.hostname}${req.originalUrl}`);
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
