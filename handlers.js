@@ -3,7 +3,7 @@ const _ = require('lodash');
 const config = require('./config');
 
 function Handlers() {
-  _.bindAll(this);
+  _.bindAll(this, _.functionsIn(this));
 
   this._cache = {};
   this.bucketName = config.awsS3BucketName;
