@@ -3,7 +3,7 @@ const _ = require('lodash');
 const config = require('./config');
 
 function Handlers() {
-  _.bindAll(this, _.functions(this));
+  _.bindAll(this);
 
   this._cache = {};
   this.bucketName = config.awsS3BucketName;
@@ -70,7 +70,7 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
 
 Handlers.prototype.request = errorHandler(function(req, res) {
   const hostname = req.hostname.toLowerCase();
-  //const hostname = _.trimStart(req.path.toLowerCase(), '/');
+  //const hostname = _.trimLeft(req.path.toLowerCase(), '/');
 
   //console.log(`${req.ip} ${req.method} ${req.protocol}://${req.hostname}${req.originalUrl}`);
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);

@@ -1,17 +1,11 @@
 {
   "name": "s3-spa-loader",
   "version": "1.0.0",
-  "description": "Caching proxy server for requests for SPAs (single page apps) with S3 bucket backend.",
-  "license": "MIT",
   "main": "server.js",
   "dependencies": {
-    "body-parser": "^1.19.0",
-    "compression": "^1.7.4",
-    "express": "^4.17.1",
-    "lodash": "^4.17.15"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/wonderlic/docker-s3-spa-loader.git"
+    "body-parser": "1.18.2",
+    "compression": "1.7.1",
+    "express": "4.16.2",
+    "lodash": "3.10.1"
   }
 }
