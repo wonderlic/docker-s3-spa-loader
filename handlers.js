@@ -69,9 +69,6 @@ Handlers.prototype.snsClearCache = errorHandler(function(req, res) {
 });
 
 Handlers.prototype.request = errorHandler(function(req, res) {
-  const hostname = req.hostname.toLowerCase();
-  //const hostname = _.trimStart(req.path.toLowerCase(), '/');
-
   //console.log(`${req.ip} ${req.method} ${req.protocol}://${req.hostname}${req.originalUrl}`);
   //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
 
@@ -83,43 +80,62 @@ Handlers.prototype.request = errorHandler(function(req, res) {
     return res.redirect(301, newUrl);
   }
 
-  return this._getSpaFromCache(hostname)
-    .then((spa) => {
-      if (spa.fileContents) {
-        log(req, 200, `Served up SPA for: ${hostname}, size: ${spa.fileContents.length}`);
-        res.send(spa.fileContents);
+  const hostname = req.hostname.toLowerCase();
+  const path = req.path.toLowerCase();
+
+  let fileType = 'SPA';
+  let key = hostname;
+  if (_.includes(['/favicon.ico', '/robots.txt'], path)) {
+    fileType = path;
+    key += path;
+  }
+
+  return this._getS3FileFromCache(key)
+    .then((file) => {
+      if (file.fileContents) {
+        log(req, 200, `Served up ${fileType} for: ${hostname}, size: ${file.fileContents.length}`);
+
+        if (_.endsWith(key, '.ico')) {
+          res.setHeader('content-type', 'image/x-icon');
+        } else if (_.endsWith(key, '.txt')) {
+          res.setHeader('content-type', 'text/plain');
+        } else {
+          res.setHeader('content-type', 'text/html');
+        }
+
+        res.send(file.fileContents);
       } else {
-        log(req, 404, `Could not find SPA for: ${hostname}`);
+        log(req, 404, `Could not find ${fileType} for: ${hostname}`);
         res.status(404).send('Not Found');
       }
     });
 });
 
-Handlers.prototype._getSpaFromCache = function(hostname) {
-  if (_.isEmpty(hostname)) {
+Handlers.prototype._getS3FileFromCache = function(key) {
+  if (_.isEmpty(key)) {
     return Promise.resolve({notFound: true});
   }
-  const spa = this._cache[hostname];
-  if (spa) {
-    return Promise.resolve(spa);
+  const file = this._cache[key];
+  if (file) {
+    return Promise.resolve(file);
   }
 
-  return httpGet(`http://${this.bucketName}.s3.amazonaws.com/${hostname}`)
+  return httpGet(`http://${this.bucketName}.s3.amazonaws.com/${key}`)
     .then((fileContents) => {
-      return this._addSpaToCache(hostname, {fileContents});
+      return this._addS3FileToCache(key, {fileContents});
     })
     .catch((err) => {
       if (_.get(err, 'code') === 404) {
-        return this._addSpaToCache(hostname, {notFound: true});
+        return this._addS3FileToCache(key, {notFound: true});
       } else {
         throw err;
       }
     });
 };
 
-Handlers.prototype._addSpaToCache = function(hostname, spa) {
-  this._cache[hostname] = spa;
-  return spa;
+Handlers.prototype._addS3FileToCache = function(key, file) {
+  this._cache[key] = file;
+  return file;
 };
 
 Handlers.prototype.error = function(err, req, res, next) {
@@ -176,7 +192,7 @@ function getWrapper(http, options) {
 
       // Resolve on end
       res.on('end', () => {
-        resolve(Buffer.concat(body).toString());
+        resolve(Buffer.concat(body));
       });
     });
 
