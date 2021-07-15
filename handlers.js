@@ -101,6 +101,9 @@ Handlers.prototype.request = errorHandler(function(req, res) {
           res.setHeader('content-type', 'text/plain');
         } else {
           res.setHeader('content-type', 'text/html');
+          if (req.secure) {
+            res.setHeader('Strict-Transport-Security', 'max-age=7776000');
+          }
         }
 
         res.send(file.fileContents);
