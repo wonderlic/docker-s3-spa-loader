@@ -106,6 +106,10 @@ Handlers.prototype.request = errorHandler(function(req, res) {
           }
         }
 
+        if (file.cacheControl) {
+          res.setHeader('Cache-Control', file.cacheControl);
+        }
+
         res.send(file.fileContents);
       } else {
         log(req, 404, `Could not find ${fileType} for: ${hostname}`);
@@ -124,8 +128,8 @@ Handlers.prototype._getS3FileFromCache = function(key) {
   }
 
   return httpGet(`http://${this.bucketName}.s3.amazonaws.com/${key}`)
-    .then((fileContents) => {
-      return this._addS3FileToCache(key, {fileContents});
+    .then(({fileContents, cacheControl}) => {
+      return this._addS3FileToCache(key, { fileContents, cacheControl });
     })
     .catch((err) => {
       if (_.get(err, 'code') === 404) {
@@ -195,7 +199,10 @@ function getWrapper(http, options) {
 
       // Resolve on end
       res.on('end', () => {
-        resolve(Buffer.concat(body));
+        resolve({
+          fileContents: Buffer.concat(body),
+          cacheControl: res.headers['cache-control'],
+        });
       });
     });
 
