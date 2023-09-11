@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const Pusher = require('pusher-js');
 
 const config = require('./config');
 
@@ -10,10 +9,11 @@ function Handlers() {
   this.bucketName = config.awsS3BucketName;
 
   if (config.pusherKey) {
+    const Pusher = require('pusher-js');
     const pusher = new Pusher(config.pusherKey);
     const channel = pusher.subscribe(config.pusherChannel);
     channel.bind('event', (data) => {
-      if (this._cache[data.objectKey]) {
+      if (data && data.objectKey && this._cache[data.objectKey]) {
         delete this._cache[data.objectKey];
       }
     });
