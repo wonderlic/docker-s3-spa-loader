@@ -13,8 +13,10 @@ function Handlers() {
     const pusher = new Pusher(config.pusherKey);
     const channel = pusher.subscribe(config.pusherChannel);
     channel.bind('event', (data) => {
-      if (data && data.objectKey && this._cache[data.objectKey]) {
+      console.log(`Received Pusher channel event`);
+      if (data && data.objectKey && this._cache[data.objectKey]) {        
         delete this._cache[data.objectKey];
+        console.log(`Cleared [${data.objectKey}] from Cache`);
       }
     });
   }
