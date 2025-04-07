@@ -21,7 +21,6 @@ const config = {
   redirectInsecure: getBoolEnvVar('REDIRECT_INSECURE'),
   awsS3BucketName: getEnvVar('AWS_S3_BUCKET_NAME'),
   pusherKey: getEnvVar('PUSHER_KEY'),
-  pusherCluster: getEnvVar('PUSHER_CLUSTER'),
   pusherChannel: getEnvVar('PUSHER_CHANNEL'),
 };
 
