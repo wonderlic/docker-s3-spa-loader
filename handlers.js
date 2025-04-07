@@ -14,11 +14,29 @@ function Handlers() {
     const channel = pusher.subscribe(config.pusherChannel);
     channel.bind('event', (data) => {
       console.log(`Received Pusher channel event`);
-      if (data && data.objectKey && this._cache[data.objectKey]) {        
+      if (data && data.objectKey && this._cache[data.objectKey]) {
         delete this._cache[data.objectKey];
         console.log(`Cleared [${data.objectKey}] from Cache`);
       }
     });
+
+    // Pusher automatically tries to reconnect. This will let us know when its trying.
+    pusher.connection.bind('state_change', (states) => {
+      console.log(
+        `Connection state changed from ${states.previous} to ${states.current}`
+      );
+      if (states.current === 'connecting') {
+        console.log('Attempting to reconnect to pusher...');
+      } else if (states.current === 'connected') {
+        console.log('Reconnected to pusher successfully.');
+      }
+    });
+
+    pusher.connection.bind('error', (err) => {
+      console.error('pusher connection error:', JSON.stringify(err));
+    });
+  } else {
+    console.log('No pusher key configured');
   }
 }
 
