@@ -10,7 +10,9 @@ function Handlers() {
 
   if (config.pusherKey) {
     const Pusher = require('pusher-js');
-    const pusher = new Pusher(config.pusherKey, {APP_CLUSTER: config.pusherCluster});
+    const pusher = new Pusher(config.pusherKey, {
+      cluster: config.pusherCluster,
+    });
     const channel = pusher.subscribe(config.pusherChannel);
     channel.bind('event', (data) => {
       console.log(`Received Pusher channel event`);
