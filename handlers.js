@@ -25,17 +25,21 @@ function Handlers() {
     // Pusher automatically tries to reconnect. This will let us know when its trying.
     pusher.connection.bind('state_change', (states) => {
       console.log(
-        `Connection state changed from ${states.previous} to ${states.current}`
+        `Pusher connection state changed from ${states.previous} to ${states.current}`
       );
       if (states.current === 'connecting') {
-        console.log('Attempting to reconnect to pusher...');
+        console.log('Attempting to connect to pusher...');
       } else if (states.current === 'connected') {
-        console.log('Reconnected to pusher successfully.');
+        console.log('Connected to pusher successfully.');
+      } else if (states.current === 'unavailable') {
+        console.log('Pusher connection is unavailable.');
+      } else if (states.current === 'disconnected') {
+        console.log('Pusher connection was disconnected.');
       }
     });
 
     pusher.connection.bind('error', (err) => {
-      console.error('pusher connection error:', JSON.stringify(err));
+      console.error('Pusher connection error:', JSON.stringify(err));
     });
   } else {
     console.log('No pusher key configured');
