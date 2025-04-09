@@ -8,12 +8,12 @@ function Handlers() {
   this._cache = {};
   this.bucketName = config.awsS3BucketName;
 
-  if (config.pusherKey && config.pusherCluster && config.pusherChannel) {
+  if (config.pusher.key) {
     const Pusher = require('pusher-js');
-    const pusher = new Pusher(config.pusherKey, {
-      cluster: config.pusherCluster,
+    const pusher = new Pusher(config.pusher.key, {
+      cluster: config.pusher.cluster,
     });
-    const channel = pusher.subscribe(config.pusherChannel);
+    const channel = pusher.subscribe(config.pusher.channel);
     channel.bind('event', (data) => {
       console.log(`Received Pusher channel event`);
       if (data && data.objectKey && this._cache[data.objectKey]) {

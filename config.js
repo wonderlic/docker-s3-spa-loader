@@ -21,9 +21,11 @@ const config = {
   trustProxy: getBoolEnvVar('TRUST_PROXY'),
   redirectInsecure: getBoolEnvVar('REDIRECT_INSECURE'),
   awsS3BucketName: getEnvVar('AWS_S3_BUCKET_NAME'),
-  pusherKey: getEnvVar('PUSHER_KEY'),
-  pusherCluster: getEnvVar('PUSHER_CLUSTER'),
-  pusherChannel: getEnvVar('PUSHER_CHANNEL'),
+  pusher: {
+    key: getEnvVar('PUSHER_KEY'),
+    cluster: getEnvVar('PUSHER_CLUSTER'),
+    channel: getEnvVar('PUSHER_CHANNEL'),
+  }
 };
 
 console.log(`config: ${JSON.stringify(config, null, ' ')}`);
