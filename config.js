@@ -2,6 +2,7 @@ const defaults = {
   PORT: '8080',
   TRUST_PROXY: 'true',
   REDIRECT_INSECURE: 'true',
+  PUSHER_CLUSTER: 'mt1',
   PUSHER_CHANNEL: 's3-spa-event',
 };
 
