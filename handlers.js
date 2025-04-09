@@ -16,29 +16,11 @@ function Handlers() {
     const channel = pusher.subscribe(config.pusherChannel);
     channel.bind('event', (data) => {
       console.log(`Received Pusher channel event`);
-      if (data && data.objectKey && this._cache[data.objectKey]) {
+      if (data && data.objectKey && this._cache[data.objectKey]) {        
         delete this._cache[data.objectKey];
         console.log(`Cleared [${data.objectKey}] from Cache`);
       }
     });
-
-    // Pusher automatically tries to reconnect. This will let us know when its trying.
-    pusher.connection.bind('state_change', (states) => {
-      console.log(
-        `Connection state changed from ${states.previous} to ${states.current}`
-      );
-      if (states.current === 'connecting') {
-        console.log('Attempting to reconnect to pusher...');
-      } else if (states.current === 'connected') {
-        console.log('Reconnected to pusher successfully.');
-      }
-    });
-
-    pusher.connection.bind('error', (err) => {
-      console.error('pusher connection error:', JSON.stringify(err));
-    });
-  } else {
-    console.log('No pusher key configured');
   }
 }
 
@@ -56,9 +38,9 @@ Handlers.prototype.snsClearCache = errorHandler(function (req, res) {
     // SNS sends a json Body with a Content-Type of text/plain for some reason
     req.body = JSON.parse(req.body);
   }
-  //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
-  //console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
-
+  // console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
+  // console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
+ 
   const snsMessageType = req.headers['x-amz-sns-message-type'];
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
 
