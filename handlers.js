@@ -8,7 +8,7 @@ function Handlers() {
   this._cache = {};
   this.bucketName = config.awsS3BucketName;
 
-  if (config.pusherKey) {
+  if (config.pusherKey && config.pusherCluster && config.pusherChannel) {
     const Pusher = require('pusher-js');
     const pusher = new Pusher(config.pusherKey, {
       cluster: config.pusherCluster,
@@ -28,9 +28,9 @@ function Handlers() {
         `Pusher connection state changed from ${states.previous} to ${states.current}`
       );
       if (states.current === 'connecting') {
-        console.log('Attempting to connect to pusher...');
+        console.log('Attempting to connect to Pusher...');
       } else if (states.current === 'connected') {
-        console.log('Connected to pusher successfully.');
+        console.log('Pusher connected successfully.');
       } else if (states.current === 'unavailable') {
         console.log('Pusher connection is unavailable.');
       } else if (states.current === 'disconnected') {
