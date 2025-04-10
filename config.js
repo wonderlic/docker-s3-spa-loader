@@ -2,6 +2,7 @@ const defaults = {
   PORT: '8080',
   TRUST_PROXY: 'true',
   REDIRECT_INSECURE: 'true',
+  PUSHER_CLUSTER: 'mt1',
   PUSHER_CHANNEL: 's3-spa-event',
 };
 
@@ -20,8 +21,11 @@ const config = {
   trustProxy: getBoolEnvVar('TRUST_PROXY'),
   redirectInsecure: getBoolEnvVar('REDIRECT_INSECURE'),
   awsS3BucketName: getEnvVar('AWS_S3_BUCKET_NAME'),
-  pusherKey: getEnvVar('PUSHER_KEY'),
-  pusherChannel: getEnvVar('PUSHER_CHANNEL'),
+  pusher: {
+    key: getEnvVar('PUSHER_KEY'),
+    cluster: getEnvVar('PUSHER_CLUSTER'),
+    channel: getEnvVar('PUSHER_CHANNEL'),
+  }
 };
 
 console.log(`config: ${JSON.stringify(config, null, ' ')}`);

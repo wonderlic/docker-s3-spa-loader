@@ -8,17 +8,41 @@ function Handlers() {
   this._cache = {};
   this.bucketName = config.awsS3BucketName;
 
-  if (config.pusherKey) {
+  if (config.pusher.key) {
     const Pusher = require('pusher-js');
-    const pusher = new Pusher(config.pusherKey);
-    const channel = pusher.subscribe(config.pusherChannel);
+    const pusher = new Pusher(config.pusher.key, {
+      cluster: config.pusher.cluster,
+    });
+    const channel = pusher.subscribe(config.pusher.channel);
     channel.bind('event', (data) => {
       console.log(`Received Pusher channel event`);
-      if (data && data.objectKey && this._cache[data.objectKey]) {        
+      if (data && data.objectKey && this._cache[data.objectKey]) {
         delete this._cache[data.objectKey];
         console.log(`Cleared [${data.objectKey}] from Cache`);
       }
     });
+
+    // Pusher automatically tries to reconnect. This will let us know when its trying.
+    pusher.connection.bind('state_change', (states) => {
+      console.log(
+        `Pusher connection state changed from ${states.previous} to ${states.current}`
+      );
+      if (states.current === 'connecting') {
+        console.log('Attempting to connect to Pusher...');
+      } else if (states.current === 'connected') {
+        console.log('Pusher connected successfully.');
+      } else if (states.current === 'unavailable') {
+        console.log('Pusher connection is unavailable.');
+      } else if (states.current === 'disconnected') {
+        console.log('Pusher connection was disconnected.');
+      }
+    });
+
+    pusher.connection.bind('error', (err) => {
+      console.error('Pusher connection error:', JSON.stringify(err));
+    });
+  } else {
+    console.log('No pusher key configured');
   }
 }
 
@@ -36,9 +60,9 @@ Handlers.prototype.snsClearCache = errorHandler(function (req, res) {
     // SNS sends a json Body with a Content-Type of text/plain for some reason
     req.body = JSON.parse(req.body);
   }
-  // console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
-  // console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
- 
+  //console.log(`HEADERS: ${JSON.stringify(req.headers, null, ' ')}`);
+  //console.log(`BODY: ${JSON.stringify(req.body, null, ' ')}`);
+
   const snsMessageType = req.headers['x-amz-sns-message-type'];
   const snsTopicArn = req.headers['x-amz-sns-topic-arn'];
 
@@ -52,7 +76,9 @@ Handlers.prototype.snsClearCache = errorHandler(function (req, res) {
   }
 
   function subscribe() {
-    console.log(`Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`);
+    console.log(
+      `Received SubscriptionConfirmation from SNS topic '${snsTopicArn}'`
+    );
     return httpsGet(req.body.SubscribeURL).then(() => {
       log(req, 200, `Successfully subscribed to SNS topic: ${snsTopicArn}`);
       res.send('OK');
@@ -106,7 +132,11 @@ Handlers.prototype.request = errorHandler(function (req, res) {
 
   return this._getS3FileFromCache(key).then((file) => {
     if (file.fileContents) {
-      log(req, 200, `Served up ${fileType} for: ${hostname}, size: ${file.fileContents.length}`);
+      log(
+        req,
+        200,
+        `Served up ${fileType} for: ${hostname}, size: ${file.fileContents.length}`
+      );
 
       if (_.endsWith(key, '.ico')) {
         res.setHeader('content-type', 'image/x-icon');
@@ -175,7 +205,11 @@ function log(req, status, result) {
   const requestUrl = `${req.protocol}://${req.hostname}${req.path}`;
   const now = new Date();
   const ms = now - req.startTime;
-  console.log(`${now.toISOString()} ${status} ${ms}ms "${result}" <- ${req.ip} ${req.method} ${requestUrl} "${req.headers['user-agent']}"`);
+  console.log(
+    `${now.toISOString()} ${status} ${ms}ms "${result}" <- ${req.ip} ${
+      req.method
+    } ${requestUrl} "${req.headers['user-agent']}"`
+  );
 }
 
 function errorHandler(handler) {
@@ -201,7 +235,9 @@ function getWrapper(http, options) {
     const req = http.get(options, function (res) {
       // Reject on bad status
       if (res.statusCode < 200 || res.statusCode >= 300) {
-        const err = new Error(`Request returned status code: ${res.statusCode}`);
+        const err = new Error(
+          `Request returned status code: ${res.statusCode}`
+        );
         err.code = res.statusCode;
         return reject(err);
       }

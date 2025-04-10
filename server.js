@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const compression = require('compression');
 
 const config = require('./config');
@@ -23,8 +22,8 @@ app.use(function(req, res, next) {
 });
 
 // parse the body of incoming requests to text/json
-app.use(bodyParser.text());
-app.use(bodyParser.json());
+app.use(express.text());
+app.use(express.json());
 
 // gzip/deflate outgoing responses
 app.use(compression());
